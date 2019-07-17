@@ -1,0 +1,31 @@
+<div class="container" *ngIf="posts$ | async as posts">
+    <div class="row">
+        <div class="col-md-1">Sort By</div>
+        <div class="col-md-2" [formGroup]="sortByForm">
+            <select class="form-control" formControlName="field">
+                <option value="createdAt">Created At</option>
+                <option value="title">Title</option>
+                <option value="status">Status</option>
+                <option value="updatedAt">Updated At</option>
+            </select>
+        </div>
+        <div class="col-md-1">
+            <i class="fa fa-arrow-up" *ngIf="directionValue === 'asc'" (click)="changeDirection('desc')"></i>
+            <i class="fa fa-arrow-down" *ngIf="directionValue === 'desc'" (click)="changeDirection('asc')"></i>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div *ngFor="let post of posts" [ngClass]="{'highlight': (post.status == postStatus.DISABLE)}">
+                <h4>{{post.title}}</h4>
+                <p><markdown [data]="post.content"></markdown></p>
+                <span class="badge">{{post.createdAt}}</span>
+                <span class="badge" *ngIf="canEdit(post)">
+                    <a class="nav-link" routerLink="/edit-post/{{post.uid}}">
+                        <i class="fa fa-edit"></i>
+                    </a>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,35 +1,82 @@
-import { TestBed, async } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
-import { AppComponent } from './app.component';
+import {TestBed, async, inject, fakeAsync} from '@angular/core/testing';
+import {PostService} from './_services/post.service';
+import {AngularFireModule} from '@angular/fire';
+import {environment} from '../environments/environment';
+import {AngularFireAuthModule} from '@angular/fire/auth';
+import {AngularFirestoreModule, DocumentReference} from '@angular/fire/firestore';
+import {Post, PostStatus} from './_models';
+import {AuthenticationService} from './_services';
 
-describe('AppComponent', () => {
-  beforeEach(async(() => {
-    TestBed.configureTestingModule({
-      imports: [
-        RouterTestingModule
-      ],
-      declarations: [
-        AppComponent
-      ],
-    }).compileComponents();
-  }));
+describe('App', () => {
+    beforeEach(() => {
+        TestBed.configureTestingModule({
+            imports: [
+                AngularFireModule.initializeApp(environment.firebase),
+                AngularFireAuthModule,
+                AngularFirestoreModule,
+            ],
+            providers: [AuthenticationService, PostService]
+        });
+    });
 
-  it('should create the app', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.debugElement.componentInstance;
-    expect(app).toBeTruthy();
-  });
+    it(
+        'login successful',
+        (done: DoneFn) => inject(
+            [AuthenticationService],
+            (authenticationService: AuthenticationService) => {
+                authenticationService.login('admin@test.com', 'admin123')
+                    .subscribe(
+                        (user: firebase.User) => {
+                            expect(user.uid).toBeTruthy();
+                            done();
+                        }
+                    );
+            }
+        )()
+    );
 
-  it(`should have as title 'simple-blog'`, () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.debugElement.componentInstance;
-    expect(app.title).toEqual('simple-blog');
-  });
-
-  it('should render title in a h1 tag', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    fixture.detectChanges();
-    const compiled = fixture.debugElement.nativeElement;
-    expect(compiled.querySelector('h1').textContent).toContain('Welcome to simple-blog!');
-  });
+    it(
+        'create post successful',
+        (done: DoneFn) => inject(
+            [PostService],
+            (postService: PostService) => {
+                const postData: Post = {
+                    title: 'Test Title 1',
+                    content: 'Test Content 1',
+                    status: PostStatus.ENABLE,
+                    userUid: 'BsfhisFyg4fSXvcJqYB6mVn37fZ2'
+                };
+                postService.create(postData).subscribe(
+                    (documentReference: DocumentReference) => {
+                        expect(documentReference.id).toBeTruthy();
+                        done();
+                    }
+                );
+            }
+        )()
+    );
+    it(
+        'update and view post successful',
+        (done: DoneFn) => inject(
+            [PostService],
+            (postService: PostService) => {
+                setTimeout(() => {
+                    const newContent = 'Test Content 1 Update';
+                    postService.all({field: 'createdAt', direction: 'desc'}).subscribe(data => {
+                        const postUid = data[0].uid;
+                        postService.update(postUid, {content: newContent}).subscribe(
+                            () => {
+                                postService.get(postUid).subscribe(
+                                    (postData) => {
+                                        expect(postData.content).toEqual(newContent);
+                                        done();
+                                    }
+                                );
+                            }
+                        );
+                    });
+                }, 2000);
+            }
+        )()
+    );
 });
