@@ -1,4 +1,9 @@
 # Simple Blog - CRUD app built by Angular + Firebase
+Demo URL: https://simple-blog-20441.web.app/
+
+Test credential:
+`admin@test.com/admin123`
+
 Run `ng test` to execute the unit tests
 
 ### Core features
